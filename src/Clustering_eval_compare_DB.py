@@ -6,6 +6,11 @@ import numpy as np
 import copy
 import argparse
 
+
+method_dic = {'mscluster':{'filename':'#Filename','scan':'#Scan','mass':'#ParentMass','rt_time':'#RetTime','cluster':'#ClusterIdx'},
+              'falcon':{'filename':'filename','scan':'scan','mass':'precursor_mz','rt_time':'retention_time','cluster':'cluster'},
+              'maracluster':{'filename':'filename','scan':'scan','mass':'precursor_mz','rt_time':'retention_time','cluster':'cluster'}}
+
 def calculate_cluster_purity(cluster):
     total_spectra = len(cluster)
     if total_spectra == 1:
@@ -26,24 +31,26 @@ def mscluster_purity(cluster_results,database_results):
                                         right_on=['MzIDFileName', 'ScanNumber'], how='inner')
     merged_data['Peptide'] = merged_data['Peptide'].str.replace('I', 'L')
     merged_data = merged_data[merged_data['Peptide'] != 'unknown']
-    print("Number of Spectra in mscluster after DB-ID:", len(merged_data))
+    # print("Number of Spectra in mscluster after DB-ID:", len(merged_data))
     return merged_data.groupby('#ClusterIdx').apply(calculate_cluster_purity),merged_data.groupby('#ClusterIdx').size()
 
 def falcon_purity(cluster_results,database_results):
     # Create a merged dataset with left join to include all cluster results and match with database results
+    database_results['MzIDFileName'] = database_results['MzIDFileName'].apply(os.path.basename)
+    cluster_results['filename'] = cluster_results['filename'].apply(os.path.basename)
     merged_data = cluster_results.merge(database_results, left_on=['filename', 'scan'],
                                         right_on=['MzIDFileName', 'ScanNumber'], how='inner')
     merged_data['Peptide'] = merged_data['Peptide'].str.replace('I', 'L')
-    merged_data.to_csv('falcon_merged.csv', index=False)
+    # merged_data.to_csv('falcon_merged.csv', index=False)
     largest_cluster_index = merged_data['cluster'].value_counts().idxmax()
 
     # Print the cluster index of the largest cluster
-    print("Cluster Index of the Largest Cluster:", largest_cluster_index)
+    # print("Cluster Index of the Largest Cluster:", largest_cluster_index)
     return merged_data.groupby('cluster').apply(calculate_cluster_purity), merged_data.groupby('cluster').size()
 
 def maracluster_purity(cluster_results,database_results):
     database_results['MzIDFileName'] = database_results['MzIDFileName'].apply(os.path.basename)
-    cluster_results['filename'] = cluster_results['filename']+'.mzML'
+    cluster_results['filename'] = cluster_results['filename'].apply(os.path.basename)
     merged_data = cluster_results.merge(database_results, left_on=['filename', 'scan'],
                                         right_on=['MzIDFileName', 'ScanNumber'], how='inner')
     merged_data['Peptide'] = merged_data['Peptide'].str.replace('I', 'L')
@@ -88,55 +95,40 @@ def calculate_n50(cluster_size, total_spectra):
             break
     return n50
 
+def n10_wrapoer(clustering_results,total_spectra,methods):
+    return calculate_n50(clustering_results.groupby(method_dic[methods]['cluster']).size(),total_spectra)
+
+def purity_wapper(clustering_ressults,database_results,methods):
+    if methods == 'mscluster':
+        return mscluster_purity(clustering_ressults, copy.copy(database_results))
+    elif methods == 'falcon':
+        return falcon_purity(clustering_ressults, copy.copy(database_results))
+    elif methods == 'maracluster':
+        return maracluster_purity(clustering_ressults, copy.copy(database_results))
+
 if __name__ == '__main__':
+    #read args from command line
     parser = argparse.ArgumentParser(description='Using ClassyFIre results to benchmark the network')
     parser.add_argument('-c', type=str, required=True, default="cluster_info.tsv", help='input clustering reuslts filename')
-    parser.add_argument('-d', type=str, required=True, default="demo.tsv",help='input database search results filename')
-    parser.add_argument('-t',type=int, required=True,default = None, help='Number of MS/MS in the datasets')
-    parser.add_argument('-methods', type=str, required=True, default="Falcon", help='Clustering methods')
+    parser.add_argument('-d', type=str, required=True, default="DB_search_demo.tsv",help='input database search results filename')
+    parser.add_argument('-t',type=int, required=True,default = 109333, help='Number of MS/MS in the datasets')
+    parser.add_argument('-methods', type=str, required=True, default="falcon", help='Clustering methods')
     args = parser.parse_args()
+    clustering_filename = args.c
+    methods = args.methods
+    total_num_spec = args.t
+    databse_filename = args.d
+
     # Load cluster results
-    maracluster_results= pd.read_csv('../data/PXD023047/maracluster/MaRaCluster_processed.clusters_p2_enriched.tsv', sep='\t')
-    falcon_results = pd.read_csv('/home/user/LabData/XianghuData/Falcon_Cluster_Benchmark/online_clustering_new_0.25/output_summary/cluster_info.tsv',sep='\t')
-    online_falcon_results = pd.read_csv('/home/user/research/online_clustering/work_0.25/cluster_info.tsv',sep='\t')
-    # online_falcon_results = pd.read_csv('../data/online_clustering/online_cluster_into.tsv',sep='\t')
-    online_falcon_results = online_falcon_results[online_falcon_results['cluster'] != -1]
-    database_results = pd.read_csv('../data/online_clustering/online_new_filtered.tsv', sep='\t')  # Adjust file path and format accordingly
-    #print("oroginal number of Spectra in mscluster:",len(mscluster_results))
-    # mscluster_n50 = calculate_n50(mscluster_results.groupby('#ClusterIdx').size(),109333)
-    falcon_n50 = calculate_n50(falcon_results.groupby('cluster').size(),6909884)
-    online_falcon_n50 = calculate_n50(online_falcon_results.groupby('cluster').size(),6909884)
-    #maracluster_n50 = calculate_n50(maracluster_results.groupby('cluster').size(),286410)
-
-
-    # print("N50 value for MSCluster:", mscluster_n50)
-    print("N50 value for Falcon:", falcon_n50)
-    print("N50 value for Online Falcon:", online_falcon_n50)
-    #print("N50 value for MaRaCluster:", maracluster_n50)
-
-    # mscluster_results = pd.read_csv('../data/results/nf_output/clustering/clusterinfo.tsv',sep='\t')  # Adjust file path and format accordingly
-    # falcon_results = pd.read_csv('../data/cluster_info.tsv', sep='\t')  # Adjust file path and format accordingly
-    # online_falcon_results = pd.read_csv('../data/online_cluster_info.tsv', sep='\t')  # Adjust file path and format accordingly
-    # maracluster_results= pd.read_csv('./processed_clusters.tsv', sep='\t')
-    # database_results = pd.read_csv('./filtered.tsv', sep='\t')
-
-
-
-    #mscluster_purity,mscluster_size = mscluster_purity(mscluster_results,copy.copy(database_results))
-    falcon_purity,falcon_size =falcon_purity(falcon_results,copy.copy(database_results))
-    online_falcon_purity,online_falcon_size =online_falcon_purity(online_falcon_results,copy.copy(database_results))
-    #maracluster_purity,maracluster_size = maracluster_purity(maracluster_results,copy.copy(database_results))
+    clustering_file_path = '../data/'+methods+'/'+clustering_filename
+    database_file_path = '../data/Database-Search/'+databse_filename
+    cluster_results = pd.read_csv(clustering_file_path, sep='\t')
+    database_results = pd.read_csv(database_file_path, sep='\t')
     database_results['Peptide'].str.replace('I', 'L')
 
-
-    # mscluster_weighted_avg_purity = calculate_weighted_average_purity(mscluster_purity, mscluster_size)
-    #falcon_weighted_avg_purity = calculate_weighted_average_purity(falcon_purity, falcon_size)
-    falcon_weighted_avg_purity = sum(falcon_purity)/len(falcon_purity)
-    #online_falcon_weighted_avg_purity = calculate_weighted_average_purity(online_falcon_purity, online_falcon_size)
-    online_falcon_weighted_avg_purity =sum(online_falcon_purity)/len(online_falcon_purity)
-    #maracluster_weighted_avg_purity = calculate_weighted_average_purity(maracluster_purity, maracluster_size)
-
-
-    # print("Weighted Average Purity for MSCluster:", mscluster_weighted_avg_purity)
-    print("Weighted Average Purity for Falcon:", falcon_weighted_avg_purity)
-    print("Weighted Average Purity for Online Falcon:", online_falcon_weighted_avg_purity)
+    #calculate n10 number & average purity
+    cluster_n10 = n10_wrapoer(cluster_results, total_num_spec,methods)
+    print("N10 value for {} clustering results is {}".format(methods,cluster_n10))
+    clustering_purity,clustering_size = purity_wapper(cluster_results,database_results,methods)
+    avg_purity = sum(clustering_purity) / len(clustering_purity)
+    print("Average Purity for {} is {}:".format(methods,avg_purity))
