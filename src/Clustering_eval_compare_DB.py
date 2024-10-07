@@ -108,7 +108,7 @@ def purity_wapper(clustering_ressults,database_results,methods):
 
 if __name__ == '__main__':
     #read args from command line
-    parser = argparse.ArgumentParser(description='Using ClassyFIre results to benchmark the network')
+    parser = argparse.ArgumentParser(description='Using DB-Search to benchmark')
     parser.add_argument('-c', type=str, required=True, default="cluster_info.tsv", help='input clustering reuslts filename')
     parser.add_argument('-d', type=str, required=True, default="DB_search_demo.tsv",help='input database search results filename')
     parser.add_argument('-t',type=int, required=True,default = 109333, help='Number of MS/MS in the datasets')

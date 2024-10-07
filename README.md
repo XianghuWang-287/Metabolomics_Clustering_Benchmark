@@ -313,6 +313,101 @@ Processing **MaRaCluster** results requires merging retention time information w
 
 ---
 
+## Running the Benchmarking Script 📈
+
+Once you have post-processed the clustering results from **msCluster**, **Falcon**, and **MaRaCluster**, you can benchmark their performance using the provided benchmarking script. This section outlines how to execute the benchmarking script and explains the required parameters.
+
+### Script Location
+
+The benchmarking script is located in the `src` directory of the project:
+
+```
+src/Clustering_benchmark_MS_RT.py
+```
+
+### Prerequisites
+
+Before running the benchmarking script, ensure that you have completed the following:
+
+- **Post-processing Clustering Results:** Ensure that the clustering results from **msCluster**, **Falcon**, and **MaRaCluster** have been post-processed and are in the required format as described in the [Post-processing of Clustering Tool Results](#post-processing-of-clustering-tool-results) section.
+- **Python Environment:** Ensure that your virtual environment is activated and all necessary dependencies are installed (as per the [Installation Guide](#installation-guide-🛠️)).
+
+### Usage
+
+To run the benchmarking script, use the following command structure:
+
+```bash
+python3 src/Clustering_benchmark_MS_RT.py -c <cluster_info_file> -t <number_of_msms> -methods <clustering_method> [-tol <tolerance>]
+```
+
+### Parameters
+
+The benchmarking script accepts several command-line arguments to customize its behavior. Below is a detailed explanation of each parameter:
+
+| Parameter | Type   | Required | Default    | Description                                           |
+|-----------|--------|----------|------------|-------------------------------------------------------|
+| `-c`      | `str`  | Yes      | `cluster_info.tsv` | **Input Clustering Results Filename:** Path to the clustering results file (e.g., `./data/mscluster/mscluster_cluster_info.tsv`). |
+| `-t`      | `int`  | Yes      | `109333`   | **Number of MS/MS in the Datasets:** Total number of MS/MS spectra in your dataset. |
+| `-methods`| `str`  | Yes      | `falcon`   | **Clustering Methods:** Specifies the clustering method to benchmark (e.g., `falcon`, `mscluster`, `maracluster`). |
+| `-tol`    | `float`| No       | `0.1`      | **Tolerance for the MS-RT Window:** Tolerance value for the mass-to-retention time window used in benchmarking. |
+
+### Example Commands
+
+Below are example commands demonstrating how to run the benchmarking script for different clustering methods.
+
+#### Benchmarking Falcon Results
+
+```bash
+python3 src/Clustering_benchmark_MS_RT.py -c ./data/falcon/falcon_cluster_info.tsv -t 109333 -methods falcon -tol 0.1
+```
+
+#### Benchmarking msCluster Results
+
+```bash
+python3 src/Clustering_benchmark_MS_RT.py -c ./data/mscluster/mscluster_cluster_info.tsv -t 109333 -methods mscluster -tol 0.1
+```
+
+#### Benchmarking MaRaCluster Results
+
+```bash
+python3 src/Clustering_benchmark_MS_RT.py -c ./data/maracluster/maracluster_cluster_info.tsv -t 109333 -methods maracluster -tol 0.1
+```
+
+### Parameter Descriptions
+
+- **Input Clustering Results Filename (`-c`):**
+  - **Description:** Path to the post-processed clustering results file.
+  - **Example:** `./data/falcon/falcon_cluster_info.tsv`
+
+- **Number of MS/MS in the Datasets (`-t`):**
+  - **Description:** Total number of MS/MS spectra in your dataset. This value is used for normalization and benchmarking purposes.
+  - **Example:** `109333`
+
+- **Clustering Methods (`-methods`):**
+  - **Description:** Specifies which clustering method's results you want to benchmark. Supported methods include `falcon`, `mscluster`, and `maracluster`.
+  - **Example:** `falcon`
+
+- **Tolerance for the MS-RT Window (`-tol`):**
+  - **Description:** Defines the tolerance for the mass-to-retention time window when benchmarking. This parameter adjusts the strictness of matching between clustered results and reference data.
+  - **Default Value:** `0.1`
+  - **Example:** `0.05`
+
+### Notes
+
+- **Consistency Across Methods:** Ensure that the `-c` parameter points to the correctly post-processed clustering results corresponding to the specified `-methods` parameter.
+- **Tolerance Adjustment:** You may need to adjust the `-tol` parameter based on the characteristics of your dataset to achieve optimal benchmarking results.
+- **Multiple Methods:** To benchmark multiple clustering methods, run the script separately for each method with the corresponding `-methods` parameter.
+
+### Troubleshooting
+
+- **Missing Dependencies:** If you encounter import errors, ensure that all required Python packages are installed in your virtual environment.
+- **Incorrect File Paths:** Verify that the paths provided to the `-c` parameter are correct and that the files exist.
+- **Insufficient Permissions:** Ensure you have the necessary permissions to read input files and write output files in the specified directories.
+
+---
+
+
+
 
 
 

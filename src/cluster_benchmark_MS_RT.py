@@ -19,7 +19,9 @@ import argparse
 
 method_dic = {'mscluster':{'filename':'#Filename','scan':'#Scan','mass':'#ParentMass','rt_time':'#RetTime','cluster':'#ClusterIdx'},
               'falcon':{'filename':'filename','scan':'scan','mass':'precursor_mz','rt_time':'retention_time','cluster':'cluster'},
-              'maracluster':{'filename':'filename','scan':'scan','mass':'precursor_mz','rt_time':'retention_time','cluster':'cluster'}}
+              'maracluster':{'filename':'filename','scan':'scan','mass':'precursor_mz','rt_time':'retention_time','cluster':'cluster'}}\
+
+ms_rt_tolerence = 0.5
 
 def get_ms1_data(mzml_file):
     ms1_data = []
@@ -72,7 +74,7 @@ def optimized_create_matching_network(cluster, method):
     edges = [
         (spec1[0], spec2[0]) for spec1, spec2 in combinations(specs, 2)
         if spec1[0].split('_')[0] == spec2[0].split('_')[0]  # Ensure filenames are the same
-           and abs(spec1[1] - spec2[1]) <= 0.01 and abs(spec1[2] - spec2[2]) <= 0.5
+           and abs(spec1[1] - spec2[1]) <= 0.01 and abs(spec1[2] - spec2[2]) <= ms_rt_tolerence
     ]
     G.add_edges_from(edges)
 
@@ -362,7 +364,7 @@ def purity_wapper(clustering_ressults,methods):
 
 if __name__ == "__main__":
     tqdm.pandas()
-    parser = argparse.ArgumentParser(description='Using ClassyFIre results to benchmark the network')
+    parser = argparse.ArgumentParser(description='Using MS-RT to benchmark')
     parser.add_argument('-c', type=str, required=True, default="cluster_info.tsv", help='input clustering reuslts filename')
     parser.add_argument('-t',type=int, required=True,default = 109333, help='Number of MS/MS in the datasets')
     parser.add_argument('-methods', type=str, required=True, default="falcon", help='Clustering methods')
@@ -371,6 +373,7 @@ if __name__ == "__main__":
     clustering_filename = args.c
     methods = args.methods
     total_num_spec = args.t
+    ms_rt_tolerence = args.tol
 
     # Load cluster results
     clustering_file_path = '../data/'+methods+'/'+clustering_filename
