@@ -15,7 +15,7 @@ Below is the hierarchical outline of the key directories and files within this p
  ┣ 📂 src
  ┃ ┣ 📂 cluster_benchmark_MS_RT
  ┃ ┣ 📂 clustering_eval_compare_DB
- ┃ ┗ 📂 Plot
+ ┃ ┗ 📂 utility
  ┗ 📂 results
    ┣ 📂 MS-RT
    ┗ 📂 DB-Search
