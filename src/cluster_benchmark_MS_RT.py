@@ -366,6 +366,7 @@ if __name__ == "__main__":
     parser.add_argument('-c', type=str, required=True, default="cluster_info.tsv", help='input clustering reuslts filename')
     parser.add_argument('-t',type=int, required=True,default = 109333, help='Number of MS/MS in the datasets')
     parser.add_argument('-methods', type=str, required=True, default="falcon", help='Clustering methods')
+    parser.add_argument('-tol', type=float,required=False,default=0.1,help='Tolerance for the MS-RT window')
     args = parser.parse_args()
     clustering_filename = args.c
     methods = args.methods
